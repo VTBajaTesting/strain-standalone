@@ -1,11 +1,14 @@
 /**
- * This program is responsible for reading in data from the analog inputs
- * and printing that data to an onboard sd card. 
- * NOTE: This program blinks out errors through an error led pin. The errors 
- * as follows in terms of blinks:
+ * This program is responsible for reading in data from the strain guages connected to the half shaft. 
+ * The data is read in as an analog input and is stored to an onboard sd card. This code is meant 
+ * to run on an Adafruit Feather M0.
+ * 
+ * NOTE: This program blinks out errors through an error led pin. The errors are as follows in terms
+ * of blinks:
  * 
  * 1 blink   - Failed to initialize the SD card.
  * 2 blinks  - Failed to open file.
+ * 
  * @author Brennan Hurst
  * @Version 15.10.2019
  */
@@ -18,7 +21,7 @@ File file;
 #define CARD_SELECT 4 //The pin used to communicate with the card
 #define ERROR_LED 13 //The LED which corrosponds to the led we wish to blink
 
-String fileName = "testFile.txt"; //the name of the file we wish to save to
+String fileName = "DumpFile.txt"; //the name of the file we wish to save to
 int dumpCount = 0;//the current dumpcount
 short dumpBuffer[BUFFER_SIZE]; //the buffer to be dumped
 
@@ -32,7 +35,7 @@ void setup() {
   pinMode(ERROR_LED, OUTPUT); //the error pin
   //Begin Serial
   Serial.begin(2000000);
-  while (!Serial);
+  while (!Serial); //wait for serial to initialize
 
   Serial.println("Beginning SD card Init. . .");
 
@@ -40,11 +43,11 @@ void setup() {
   if (!SD.begin(CARD_SELECT))
   {
     Serial.println("Init failed!");
-    error(1);
+    error(1); //blink out error 1
   }
   else
   {
-    Serial.println("Init completed successfully");
+    Serial.println("Init completed successfully"); 
   }
 }
 
@@ -57,7 +60,7 @@ void loop() {
   // put your main code here, to run repeatedly:
   if (dumpCount == BUFFER_SIZE)
   {
-    writeFile(); //dump the data if the dump count is equal to the buffer size
+    dumpToFile(); //dump the data if the dump count is equal to the buffer size
   }
   else
   {
@@ -68,7 +71,7 @@ void loop() {
 
 /**
  * This method is responsible for writing the strain data 
- * to the data buffer. 
+ * to the data buffer.
  */
 void writeToBuffer(short strainMeasured)
 {
@@ -80,7 +83,7 @@ void writeToBuffer(short strainMeasured)
  * This method is responsible for dumping the data in the buffer
  * to the file and resetting the dumpCount to 0. 
  */
-void writeFile()
+void dumpToFile()
 {
    //open the file
     file = SD.open(fileName, FILE_WRITE);
@@ -95,24 +98,26 @@ void writeFile()
       }
       //reset dumpCount to zero
       dumpCount = 0;
+      //close the file stream
       file.close();
       Serial.println("Data dump complete");
     }
     else
     {
       Serial.println("Failed to open the file");
-      error(2);
+      error(2); //if the file does not open correctly, blink error code.
     }
 }
 /**
  * This method is responsible for holding the program 
- * hostage if an error occurs and blinking out an error 
- * code to the associated ERROR_LED pin.
+ * in an infinite loop if an error occurs and blinking out 
+ * an error code to the associated ERROR_LED pin.
  */
 void error(byte errorNum)
 {
+  //hold the program in this loop indefinately
   while (1) {
-    byte i;
+    int i;
     for (i = 0; i < errorNum; i++)
     {
       digitalWrite(ERROR_LED, HIGH);
